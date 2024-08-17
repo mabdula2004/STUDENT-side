@@ -11,7 +11,7 @@ class TaskListScreen extends StatelessWidget {
         stream: FirebaseFirestore.instance.collection('tasks').snapshots(),
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
-            return Center(child: CircularProgressIndicator());
+            return const Center(child: CircularProgressIndicator());
           }
 
           final tasks = snapshot.data!.docs;

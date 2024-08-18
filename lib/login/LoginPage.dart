@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class LoginPage extends StatefulWidget {
   @override
@@ -10,26 +11,42 @@ class _LoginPageState extends State<LoginPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _auth = FirebaseAuth.instance;
+  final _firestore = FirebaseFirestore.instance;
 
   Future<void> _login() async {
     try {
-      // Sign in with email and password using Firebase Authentication
+      // Sign in with email and password
       UserCredential userCredential = await _auth.signInWithEmailAndPassword(
         email: _emailController.text,
         password: _passwordController.text,
       );
 
       // Check if the email is verified
-      User? user = _auth.currentUser;
-      if (user != null && !user.emailVerified) {
-        // Email is not verified
-        await _auth.signOut(); // Sign out the user
-        _showErrorDialog(
-          'Please verify your email address before logging in. A verification link was sent to your email.',
-        );
+      if (!userCredential.user!.emailVerified) {
+        await _auth.signOut(); // Sign out the user if email is not verified
+        _showErrorDialog('Please verify your email before logging in.');
+        return;
+      }
+
+      // Retrieve the user's document
+      DocumentSnapshot userDoc = await _firestore.collection('users').doc(userCredential.user!.uid).get();
+
+      // Check if the document exists
+      if (!userDoc.exists) {
+        _showErrorDialog('User data not found. Please register again.');
+        return;
+      }
+
+      // Get the user's role
+      String role = userDoc['role'];
+
+      if (role == 'teacher') {
+        Navigator.of(context).pushReplacementNamed('/home'); // Navigate to teacher's home screen
+      } else if (role == 'student') {
+        Navigator.of(context).pushReplacementNamed('/studentHome'); // Navigate to student's home screen
       } else {
-        // Email is verified, navigate to StudentHomeScreen
-        Navigator.of(context).pushReplacementNamed('/studentHome');
+        // Handle unexpected role or case
+        Navigator.of(context).pushReplacementNamed('/login');
       }
     } catch (e) {
       print('Error logging in: $e');
@@ -73,13 +90,13 @@ class _LoginPageState extends State<LoginPage> {
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            SizedBox(height: 70),
-            const Text(
+            SizedBox(height: 70,),
+            Text(
               'Welcome',
               style: TextStyle(fontSize: 35, fontWeight: FontWeight.bold),
               textAlign: TextAlign.center, // Center the text
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: 20),
             TextField(
               controller: _emailController,
               decoration: InputDecoration(labelText: 'Email'),
@@ -90,7 +107,7 @@ class _LoginPageState extends State<LoginPage> {
               decoration: InputDecoration(labelText: 'Password'),
               obscureText: true,
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: 20),
             ElevatedButton(
               onPressed: _login,
               child: Text('Login', style: TextStyle(color: Colors.white)),
@@ -104,7 +121,7 @@ class _LoginPageState extends State<LoginPage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Text('Don\'t have an account?', style: TextStyle(color: Colors.red)),
+                Text('Already have an account?', style: TextStyle(color: Colors.red)),
                 TextButton(
                   onPressed: () {
                     Navigator.pushNamed(context, '/registerTeacher'); // Ensure this route exists
@@ -116,7 +133,7 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ],
             ),
-            const SizedBox(height: 10),
+            SizedBox(height: 50),
           ],
         ),
       ),

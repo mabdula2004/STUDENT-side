@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:student_s/performance/StudentPerformanceScreen.dart';
+import 'package:student_s/register/RegisterTeacherPage.dart';
 import 'package:student_s/tasklist/TaskListScreen.dart';
 import 'package:student_s/register/RegisterTeacherPage.dart' as register;
 import 'package:student_s/course/CourseRegistrationForm.dart' as course;
@@ -33,6 +34,7 @@ class MyApp extends StatelessWidget {
         '/studentHome': (context) => StudentHomeScreen(),
         '/courseStatus': (context) => CourseRegistrationStatus(),
         '/login': (context) => LoginPage(),
+        '/registerTeacher': (context) => RegisterTeacherPage(),
         '/tasklist': (context) => TaskListScreen(),
         '/performance': (context) => StudentPerformanceScreen(studentId: ''),
         '/registerCourse': (context) => CourseRegistrationForm(),

@@ -12,6 +12,7 @@ class _CourseRegistrationFormState extends State<CourseRegistrationForm> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
   String? _selectedCourseId;
   bool _isSubmitting = false;
@@ -31,6 +32,12 @@ class _CourseRegistrationFormState extends State<CourseRegistrationForm> {
             TextField(
               controller: _nameController,
               decoration: InputDecoration(labelText: 'Name'),
+            ),
+            SizedBox(height: 10),
+            TextField(
+              controller: _emailController,
+              decoration: InputDecoration(labelText: 'Email'),
+              keyboardType: TextInputType.emailAddress,
             ),
             SizedBox(height: 10),
             TextField(
@@ -94,7 +101,10 @@ class _CourseRegistrationFormState extends State<CourseRegistrationForm> {
   }
 
   Future<void> _submitRegistration() async {
-    if (_selectedCourseId == null || _nameController.text.isEmpty || _phoneController.text.isEmpty) {
+    if (_selectedCourseId == null ||
+        _nameController.text.isEmpty ||
+        _emailController.text.isEmpty ||
+        _phoneController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please fill in all fields')),
       );
@@ -117,12 +127,13 @@ class _CourseRegistrationFormState extends State<CourseRegistrationForm> {
     }
 
     try {
-      await _firestore.collection('courseRequests').add({
+      await _firestore.collection('courseRegistrationRequests').add({
         'studentId': user.uid,
         'studentName': _nameController.text,
-        'studentEmail': user.email,
+        'studentEmail': _emailController.text,
         'studentPhone': _phoneController.text,
         'courseId': _selectedCourseId,
+        'course': (await _firestore.collection('courses').doc(_selectedCourseId).get()).data()?['name'],
         'status': 'pending',
       });
 

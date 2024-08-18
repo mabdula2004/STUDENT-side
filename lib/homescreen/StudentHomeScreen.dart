@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:student_s/course/CourseTopicsScreen.dart';
 
 class StudentHomeScreen extends StatefulWidget {
   @override
@@ -26,6 +28,44 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
     setState(() {
       _user = FirebaseAuth.instance.currentUser;
     });
+  }
+
+  Future<void> _checkRegistration(BuildContext context) async {
+    if (_user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('User not logged in')),
+      );
+      return;
+    }
+
+    try {
+      var requestQuery = await FirebaseFirestore.instance
+          .collection('courseRequests')
+          .where('studentId', isEqualTo: _user!.uid)
+          .where('status', isEqualTo: 'approved')
+          .get();
+
+      if (requestQuery.docs.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No approved registrations found')),
+        );
+        return;
+      }
+
+      var approvedRequest = requestQuery.docs.first;
+      String courseId = approvedRequest['courseId'];
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => CourseTopicsScreen(courseId: courseId),
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to check registration')),
+      );
+    }
   }
 
   @override
@@ -112,20 +152,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: () {
-                            Navigator.pushNamed(context, '/tasklist');
-                          },
-                          icon: Icon(Icons.assignment, color: Colors.white),
-                          label: Text('View Tasks', style: TextStyle(color: Colors.white)),
-                          style: ElevatedButton.styleFrom(
-                            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-                            backgroundColor: Colors.deepPurple,
-                            textStyle: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                      ),
+
                       SizedBox(width: 10),
                       Expanded(
                         child: ElevatedButton.icon(
@@ -177,6 +204,17 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                         ),
                       ),
                     ],
+                  ),
+                  SizedBox(height: 20),
+                  ElevatedButton.icon(
+                    onPressed: () => _checkRegistration(context),
+                    icon: Icon(Icons.assignment, color: Colors.white),
+                    label: Text('View Tasks', style: TextStyle(color: Colors.white)),
+                    style: ElevatedButton.styleFrom(
+                      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                      backgroundColor: Colors.deepPurple,
+                      textStyle: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
                   ),
                 ],
               ),
